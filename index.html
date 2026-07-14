@@ -1,470 +1,256 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
+.job-vacancy {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #fff0f2;
+  color: #a80725;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+.apply-link {
+  display: block;
+  margin-top: 7px;
+  color: #d90429;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+<script>
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycby-emiO4iyZ6V-o7N3Pn9T7f385SiXPSm5lcWAa-LHKIODPhVnxPXvoRY278JfhwIMIBg/exec";
 
-  <title>Last Date Reminder</title>
+  const LIMIT = 5;
+  const listElement = document.getElementById("lastDateList");
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+  function escapeHTML(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      font-family: Arial, Helvetica, sans-serif;
-    }
+  function safeURL(value) {
+    try {
+      const url = new URL(String(value || "").trim());
 
-    body {
-      padding: 0;
-    }
-
-    .last-date-widget {
-      width: 100%;
-      max-width: 340px;
-      margin: 0 auto;
-      background: #ffffff;
-      border: 1px solid #dfe5ec;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 7px rgba(0, 0, 0, 0.08);
-    }
-
-    .widget-heading {
-      padding: 18px 17px;
-      background: #1f50a5;
-      color: #ffffff;
-      font-size: 19px;
-      line-height: 1.2;
-      font-weight: 700;
-    }
-
-    .widget-list {
-      padding: 14px 16px 6px;
-    }
-
-    .job-card {
-      display: flex;
-      align-items: center;
-      gap: 13px;
-      width: 100%;
-      min-height: 110px;
-      margin: 0 0 12px;
-      padding: 13px 12px;
-      background: #ffffff;
-      border: 1px solid #e3e8ee;
-      border-radius: 10px;
-      color: inherit;
-      text-decoration: none;
-      transition:
-        box-shadow 0.2s ease,
-        transform 0.2s ease;
-    }
-
-    .job-card:hover {
-      text-decoration: none;
-      box-shadow: 0 3px 10px rgba(23, 57, 96, 0.1);
-      transform: translateY(-1px);
-    }
-
-    .date-box {
-      flex: 0 0 55px;
-      width: 55px;
-      height: 51px;
-      background: #fdebed;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .date-day {
-      color: #e40023;
-      font-size: 21px;
-      line-height: 21px;
-      font-weight: 800;
-    }
-
-    .date-month {
-      margin-top: 3px;
-      color: #e40023;
-      font-size: 12px;
-      line-height: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .job-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .job-title {
-      margin: 0;
-      color: #183a61;
-      font-size: 16px;
-      line-height: 1.28;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
-    .job-status {
-      margin-top: 7px;
-      color: #e40023;
-      font-size: 14px;
-      line-height: 1.2;
-      font-weight: 700;
-    }
-
-    .loading,
-    .empty-message,
-    .error-message {
-      padding: 28px 10px;
-      color: #666666;
-      font-size: 14px;
-      line-height: 1.5;
-      text-align: center;
-    }
-
-    .error-message {
-      color: #d00020;
-    }
-
-    @media only screen and (max-width: 480px) {
-      .last-date-widget {
-        max-width: 100%;
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        return url.href;
       }
+    } catch (error) {}
 
-      .widget-heading {
-        padding: 17px 16px;
-        font-size: 18px;
-      }
+    return "";
+  }
 
-      .widget-list {
-        padding: 14px 16px 5px;
-      }
+  function parseDate(value) {
+    const date = new Date(String(value) + "T12:00:00");
 
-      .job-card {
-        min-height: 105px;
-        gap: 12px;
-      }
+    return isNaN(date.getTime()) ? null : date;
+  }
 
-      .job-title {
-        font-size: 15.5px;
-      }
-    }
-  </style>
-</head>
+  function getDateParts(value) {
+    const date = parseDate(value);
 
-<body>
-
-  <div class="last-date-widget">
-    <div class="widget-heading">
-      Last Date Reminder
-    </div>
-
-    <div class="widget-list" id="lastDateList">
-      <div class="loading">
-        Loading...
-      </div>
-    </div>
-  </div>
-
-  <script>
-    /*
-     * CHANGE THIS ONLY
-     * Paste your Apps Script /exec URL here.
-     */
-    const API_URL =
-      "https://script.google.com/macros/s/AKfycby-emiO4iyZ6V-o7N3Pn9T7f385SiXPSm5lcWAa-LHKIODPhVnxPXvoRY278JfhwIMIBg/exec;
-
-    /*
-     * Number of jobs to show.
-     */
-    const LIMIT = 5;
-
-    const listElement =
-      document.getElementById("lastDateList");
-
-    function escapeHTML(value) {
-      return String(value || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    if (!date) {
+      return null;
     }
 
-    function getSafeURL(value) {
-      try {
-        const url = new URL(
-          String(value || "").trim()
-        );
+    return {
+      day: String(date.getDate()).padStart(2, "0"),
+      month: date
+        .toLocaleDateString("en-IN", { month: "short" })
+        .toUpperCase()
+    };
+  }
 
-        if (
-          url.protocol === "http:" ||
-          url.protocol === "https:"
-        ) {
-          return url.href;
-        }
-      } catch (error) {
-        return "";
-      }
+  function getDaysLeft(value) {
+    const closingDate = parseDate(value);
 
+    if (!closingDate) {
+      return null;
+    }
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    closingDate.setHours(0, 0, 0, 0);
+
+    return Math.round(
+      (closingDate.getTime() - today.getTime()) /
+      (1000 * 60 * 60 * 24)
+    );
+  }
+
+  function getStatus(value) {
+    const daysLeft = getDaysLeft(value);
+
+    if (daysLeft === 0) {
+      return "Today is Last Date to Apply";
+    }
+
+    if (daysLeft >= 1 && daysLeft <= 3) {
+      return "Closing Soon";
+    }
+
+    return "Apply Now";
+  }
+
+  function formatVacancies(value) {
+    const text = String(value || "").trim();
+
+    if (!text) {
       return "";
     }
 
-    function parseDate(dateValue) {
-      if (!dateValue) {
-        return null;
-      }
+    const number = Number(text.replace(/,/g, ""));
 
-      const cleanValue =
-        String(dateValue).trim();
-
-      const date = new Date(
-        cleanValue.includes("T")
-          ? cleanValue
-          : cleanValue + "T12:00:00"
-      );
-
-      if (isNaN(date.getTime())) {
-        return null;
-      }
-
-      return date;
+    if (!Number.isNaN(number)) {
+      return number.toLocaleString("en-IN") + " Vacancies";
     }
 
-    function getDateParts(dateValue) {
-      const date = parseDate(dateValue);
+    return text + " Vacancies";
+  }
 
-      if (!date) {
-        return null;
-      }
+  function createCard(job) {
+    const title = String(job.targetName || "").trim();
+    const lastDate = String(job.lastDate || "").trim();
+    const notificationPdf = safeURL(job.notificationPdf);
+    const applicationLink = safeURL(job.applicationLink);
+    const vacancies = formatVacancies(job.vacancies);
 
-      return {
-        day: String(date.getDate()).padStart(
-          2,
-          "0"
-        ),
+    const dateParts = getDateParts(lastDate);
 
-        month: date
-          .toLocaleDateString("en-IN", {
-            month: "short"
-          })
-          .toUpperCase()
-      };
+    if (!title || !dateParts) {
+      return "";
     }
 
-    function getDaysLeft(dateValue) {
-      const closingDate = parseDate(dateValue);
+    const titleHTML = notificationPdf
+      ? `
+        <a
+          class="job-title"
+          href="${escapeHTML(notificationPdf)}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ${escapeHTML(title)}
+        </a>
+      `
+      : `
+        <div class="job-title">
+          ${escapeHTML(title)}
+        </div>
+      `;
 
-      if (!closingDate) {
-        return null;
+    const vacancyHTML = vacancies
+      ? `
+        <div class="job-vacancy">
+          👥 ${escapeHTML(vacancies)}
+        </div>
+      `
+      : "";
+
+    const status = getStatus(lastDate);
+
+    const statusHTML = applicationLink
+      ? `
+        <a
+          class="apply-link"
+          href="${escapeHTML(applicationLink)}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ${escapeHTML(status)}
+        </a>
+      `
+      : `
+        <div class="job-status">
+          ${escapeHTML(status)}
+        </div>
+      `;
+
+    return `
+      <div class="job-card">
+        <div class="date-box">
+          <div class="date-day">
+            ${escapeHTML(dateParts.day)}
+          </div>
+
+          <div class="date-month">
+            ${escapeHTML(dateParts.month)}
+          </div>
+        </div>
+
+        <div class="job-content">
+          ${titleHTML}
+          ${vacancyHTML}
+          ${statusHTML}
+        </div>
+      </div>
+    `;
+  }
+
+  async function loadJobs() {
+    try {
+      const requestURL =
+        API_URL +
+        "?limit=" +
+        encodeURIComponent(LIMIT) +
+        "&cache=" +
+        Date.now();
+
+      console.log("Fetching:", requestURL);
+
+      const response = await fetch(requestURL);
+
+      if (!response.ok) {
+        throw new Error("HTTP error: " + response.status);
       }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const text = await response.text();
 
-      closingDate.setHours(
-        23,
-        59,
-        59,
-        999
-      );
+      console.log("API response:", text);
 
-      return Math.ceil(
-        (
-          closingDate.getTime() -
-          today.getTime()
-        ) /
-        (
-          1000 *
-          60 *
-          60 *
-          24
-        )
-      );
-    }
+      const result = JSON.parse(text);
 
-    function getStatus(dateValue) {
-      const daysLeft =
-        getDaysLeft(dateValue);
-
-      if (daysLeft === null) {
-        return "Apply Now";
-      }
-
-      if (daysLeft <= 0) {
-        return "Last Date Today";
-      }
-
-      if (daysLeft <= 3) {
-        return "Closing Soon";
-      }
-
-      return "Apply Now";
-    }
-
-    function createCard(job) {
-      const title =
-        String(job.targetName || "").trim();
-
-      const lastDate =
-        String(job.lastDate || "").trim();
-
-      const applicationLink =
-        String(
-          job.applicationLink || ""
-        ).trim();
-
-      if (!title || !lastDate) {
-        return "";
-      }
-
-      const dateParts =
-        getDateParts(lastDate);
-
-      if (!dateParts) {
-        return "";
-      }
-
-      const safeLink =
-        getSafeURL(applicationLink);
-
-      const tagName =
-        safeLink ? "a" : "div";
-
-      const linkAttributes = safeLink
-        ? ' href="' +
-          escapeHTML(safeLink) +
-          '" target="_blank"' +
-          ' rel="noopener noreferrer"'
-        : "";
-
-      return (
-        "<" +
-        tagName +
-        ' class="job-card"' +
-        linkAttributes +
-        ">" +
-
-          '<div class="date-box">' +
-
-            '<div class="date-day">' +
-              escapeHTML(dateParts.day) +
-            "</div>" +
-
-            '<div class="date-month">' +
-              escapeHTML(dateParts.month) +
-            "</div>" +
-
-          "</div>" +
-
-          '<div class="job-content">' +
-
-            '<div class="job-title">' +
-              escapeHTML(title) +
-            "</div>" +
-
-            '<div class="job-status">' +
-              escapeHTML(
-                getStatus(lastDate)
-              ) +
-            "</div>" +
-
-          "</div>" +
-
-        "</" +
-        tagName +
-        ">"
-      );
-    }
-
-    async function loadJobs() {
-      try {
-        const requestURL =
-          API_URL +
-          "?limit=" +
-          encodeURIComponent(LIMIT) +
-          "&cache=" +
-          Date.now();
-
-        const response = await fetch(
-          requestURL,
-          {
-            method: "GET",
-            cache: "no-store",
-            redirect: "follow"
-          }
+      if (result.status !== "success") {
+        throw new Error(
+          result.message || "Apps Script returned an error"
         );
-
-        if (!response.ok) {
-          throw new Error(
-            "API request failed"
-          );
-        }
-
-        const result =
-          await response.json();
-
-        if (result.status !== "success") {
-          throw new Error(
-            result.message ||
-            "Unable to fetch jobs"
-          );
-        }
-
-        const jobs =
-          Array.isArray(result.jobs)
-            ? result.jobs
-            : [];
-
-        if (!jobs.length) {
-          listElement.innerHTML =
-            '<div class="empty-message">' +
-            "No upcoming deadlines found." +
-            "</div>";
-
-          return;
-        }
-
-        const cards = jobs
-          .slice(0, LIMIT)
-          .map(createCard)
-          .filter(Boolean)
-          .join("");
-
-        listElement.innerHTML =
-          cards ||
-          '<div class="empty-message">' +
-          "No upcoming deadlines found." +
-          "</div>";
-
-      } catch (error) {
-        console.error(
-          "Widget error:",
-          error
-        );
-
-        listElement.innerHTML =
-          '<div class="error-message">' +
-          "Unable to load deadlines." +
-          "</div>";
       }
+
+      const jobs = Array.isArray(result.jobs)
+        ? result.jobs
+        : [];
+
+      if (!jobs.length) {
+        listElement.innerHTML =
+          '<div class="empty-message">No upcoming deadlines found.</div>';
+
+        return;
+      }
+
+      const cards = jobs
+        .map(createCard)
+        .filter(Boolean)
+        .join("");
+
+      listElement.innerHTML =
+        cards ||
+        '<div class="empty-message">No valid deadlines found.</div>';
+
+    } catch (error) {
+      console.error("Widget error:", error);
+
+      listElement.innerHTML =
+        '<div class="error-message">' +
+        "Unable to load: " +
+        escapeHTML(error.message) +
+        "</div>";
     }
+  }
 
-    loadJobs();
-  </script>
-
-</body>
-</html>
+  loadJobs();
+</script>
