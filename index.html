@@ -1,256 +1,529 @@
-.job-vacancy {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 4px 8px;
-  background: #fff0f2;
-  color: #a80725;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
 
-.apply-link {
-  display: block;
-  margin-top: 7px;
-  color: #d90429;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-}
-<script>
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycby-emiO4iyZ6V-o7N3Pn9T7f385SiXPSm5lcWAa-LHKIODPhVnxPXvoRY278JfhwIMIBg/exec";
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-  const LIMIT = 5;
-  const listElement = document.getElementById("lastDateList");
+  <title>Last Date Reminder</title>
 
-  function escapeHTML(value) {
-    return String(value || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  function safeURL(value) {
-    try {
-      const url = new URL(String(value || "").trim());
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-      if (url.protocol === "https:" || url.protocol === "http:") {
-        return url.href;
+    body {
+      padding: 10px;
+    }
+
+    .last-date-widget {
+      width: 100%;
+      max-width: 350px;
+      margin: 0 auto;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid #efdadd;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(120, 15, 35, 0.12);
+    }
+
+    .widget-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 17px;
+      background: linear-gradient(135deg, #a80725, #e11d48);
+      color: #ffffff;
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .bell {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 31px;
+      height: 31px;
+      flex: 0 0 31px;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 50%;
+    }
+
+    .bell svg {
+      width: 19px;
+      height: 19px;
+      fill: #ffffff;
+    }
+
+    .bell-dot {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: 8px;
+      height: 8px;
+      background: #ffd166;
+      border: 1px solid #ffffff;
+      border-radius: 50%;
+    }
+
+    .widget-list {
+      padding: 14px;
+      background: #fff8f9;
+    }
+
+    .job-card {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 100%;
+      min-height: 108px;
+      margin-bottom: 12px;
+      padding: 13px 12px;
+      background: #ffffff;
+      border: 1px solid #efdadd;
+      border-radius: 11px;
+    }
+
+    .job-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .date-box {
+      flex: 0 0 58px;
+      width: 58px;
+      height: 58px;
+      background: #ffffff;
+      border: 1px solid #ef9bad;
+      border-radius: 9px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .date-day {
+      color: #d90429;
+      font-size: 22px;
+      line-height: 22px;
+      font-weight: 800;
+    }
+
+    .date-month {
+      margin-top: 4px;
+      color: #d90429;
+      font-size: 12px;
+      line-height: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .job-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .job-title {
+      display: block;
+      margin: 0;
+      color: #4f1020;
+      font-size: 16px;
+      line-height: 1.28;
+      font-weight: 700;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+
+    .job-title:hover {
+      color: #d90429;
+      text-decoration: underline;
+    }
+
+    .job-vacancy {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 4px 8px;
+      background: #fff0f2;
+      color: #a80725;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .job-status,
+    .apply-link {
+      display: block;
+      margin-top: 7px;
+      color: #d90429;
+      font-size: 13px;
+      line-height: 1.25;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .apply-link:hover {
+      text-decoration: underline;
+    }
+
+    .loading,
+    .empty-message,
+    .error-message {
+      padding: 28px 10px;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .loading,
+    .empty-message {
+      color: #666666;
+    }
+
+    .error-message {
+      color: #d90429;
+    }
+
+    @media only screen and (max-width: 480px) {
+      body {
+        padding: 0;
       }
-    } catch (error) {}
 
-    return "";
-  }
+      .last-date-widget {
+        max-width: 100%;
+      }
 
-  function parseDate(value) {
-    const date = new Date(String(value) + "T12:00:00");
+      .widget-heading {
+        padding: 15px;
+        font-size: 18px;
+      }
 
-    return isNaN(date.getTime()) ? null : date;
-  }
+      .widget-list {
+        padding: 12px;
+      }
 
-  function getDateParts(value) {
-    const date = parseDate(value);
+      .job-card {
+        gap: 11px;
+        padding: 12px 10px;
+      }
 
-    if (!date) {
-      return null;
+      .job-title {
+        font-size: 15px;
+      }
     }
+  </style>
+</head>
 
-    return {
-      day: String(date.getDate()).padStart(2, "0"),
-      month: date
-        .toLocaleDateString("en-IN", { month: "short" })
-        .toUpperCase()
-    };
-  }
+<body>
 
-  function getDaysLeft(value) {
-    const closingDate = parseDate(value);
+  <div class="last-date-widget">
 
-    if (!closingDate) {
-      return null;
-    }
+    <div class="widget-heading">
+      <div class="bell">
 
-    const today = new Date();
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 22a2.5 2.5 0 0 0 2.35-1.67h-4.7A2.5 2.5 0 0 0 12 22Zm7-5.5-1.5-1.8V10a5.5 5.5 0 0 0-4.5-5.4V4a1 1 0 1 0-2 0v.6A5.5 5.5 0 0 0 6.5 10v4.7L5 16.5V18h14v-1.5Z"/>
+        </svg>
 
-    today.setHours(0, 0, 0, 0);
-    closingDate.setHours(0, 0, 0, 0);
-
-    return Math.round(
-      (closingDate.getTime() - today.getTime()) /
-      (1000 * 60 * 60 * 24)
-    );
-  }
-
-  function getStatus(value) {
-    const daysLeft = getDaysLeft(value);
-
-    if (daysLeft === 0) {
-      return "Today is Last Date to Apply";
-    }
-
-    if (daysLeft >= 1 && daysLeft <= 3) {
-      return "Closing Soon";
-    }
-
-    return "Apply Now";
-  }
-
-  function formatVacancies(value) {
-    const text = String(value || "").trim();
-
-    if (!text) {
-      return "";
-    }
-
-    const number = Number(text.replace(/,/g, ""));
-
-    if (!Number.isNaN(number)) {
-      return number.toLocaleString("en-IN") + " Vacancies";
-    }
-
-    return text + " Vacancies";
-  }
-
-  function createCard(job) {
-    const title = String(job.targetName || "").trim();
-    const lastDate = String(job.lastDate || "").trim();
-    const notificationPdf = safeURL(job.notificationPdf);
-    const applicationLink = safeURL(job.applicationLink);
-    const vacancies = formatVacancies(job.vacancies);
-
-    const dateParts = getDateParts(lastDate);
-
-    if (!title || !dateParts) {
-      return "";
-    }
-
-    const titleHTML = notificationPdf
-      ? `
-        <a
-          class="job-title"
-          href="${escapeHTML(notificationPdf)}"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          ${escapeHTML(title)}
-        </a>
-      `
-      : `
-        <div class="job-title">
-          ${escapeHTML(title)}
-        </div>
-      `;
-
-    const vacancyHTML = vacancies
-      ? `
-        <div class="job-vacancy">
-          👥 ${escapeHTML(vacancies)}
-        </div>
-      `
-      : "";
-
-    const status = getStatus(lastDate);
-
-    const statusHTML = applicationLink
-      ? `
-        <a
-          class="apply-link"
-          href="${escapeHTML(applicationLink)}"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          ${escapeHTML(status)}
-        </a>
-      `
-      : `
-        <div class="job-status">
-          ${escapeHTML(status)}
-        </div>
-      `;
-
-    return `
-      <div class="job-card">
-        <div class="date-box">
-          <div class="date-day">
-            ${escapeHTML(dateParts.day)}
-          </div>
-
-          <div class="date-month">
-            ${escapeHTML(dateParts.month)}
-          </div>
-        </div>
-
-        <div class="job-content">
-          ${titleHTML}
-          ${vacancyHTML}
-          ${statusHTML}
-        </div>
+        <span class="bell-dot"></span>
       </div>
-    `;
-  }
 
-  async function loadJobs() {
-    try {
-      const requestURL =
-        API_URL +
-        "?limit=" +
-        encodeURIComponent(LIMIT) +
-        "&cache=" +
-        Date.now();
+      <span>Last Date Reminder</span>
+    </div>
 
-      console.log("Fetching:", requestURL);
+    <div class="widget-list" id="lastDateList">
+      <div class="loading">Loading...</div>
+    </div>
 
-      const response = await fetch(requestURL);
+  </div>
 
-      if (!response.ok) {
-        throw new Error("HTTP error: " + response.status);
+  <script>
+    const API_URL =
+      "https://script.google.com/macros/s/AKfycby-emiO4iyZ6V-o7N3Pn9T7f385SiXPSm5lcWAa-LHKIODPhVnxPXvoRY278JfhwIMIBg/exec";
+
+    const LIMIT = 5;
+
+    const listElement =
+      document.getElementById("lastDateList");
+
+    function escapeHTML(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function getSafeURL(value) {
+      try {
+        const url = new URL(String(value || "").trim());
+
+        if (
+          url.protocol === "https:" ||
+          url.protocol === "http:"
+        ) {
+          return url.href;
+        }
+      } catch (error) {
+        return "";
       }
 
-      const text = await response.text();
+      return "";
+    }
 
-      console.log("API response:", text);
+    function parseDate(value) {
+      const text = String(value || "").trim();
 
-      const result = JSON.parse(text);
+      if (!text) {
+        return null;
+      }
 
-      if (result.status !== "success") {
-        throw new Error(
-          result.message || "Apps Script returned an error"
+      const date = new Date(text + "T12:00:00");
+
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    function getDateParts(value) {
+      const date = parseDate(value);
+
+      if (!date) {
+        return null;
+      }
+
+      return {
+        day: String(date.getDate()).padStart(2, "0"),
+
+        month: date
+          .toLocaleDateString("en-IN", {
+            month: "short"
+          })
+          .toUpperCase()
+      };
+    }
+
+    function getDaysLeft(value) {
+      const closingDate = parseDate(value);
+
+      if (!closingDate) {
+        return null;
+      }
+
+      const today = new Date();
+
+      today.setHours(0, 0, 0, 0);
+      closingDate.setHours(0, 0, 0, 0);
+
+      return Math.round(
+        (closingDate.getTime() - today.getTime()) /
+        (1000 * 60 * 60 * 24)
+      );
+    }
+
+    function getStatus(value) {
+      const daysLeft = getDaysLeft(value);
+
+      if (daysLeft === 0) {
+        return "Today is Last Date to Apply";
+      }
+
+      if (daysLeft >= 1 && daysLeft <= 3) {
+        return "Closing Soon";
+      }
+
+      return "Apply Now";
+    }
+
+    function formatVacancies(value) {
+      const text = String(value || "").trim();
+
+      if (!text) {
+        return "";
+      }
+
+      const number =
+        Number(text.replace(/,/g, ""));
+
+      if (!Number.isNaN(number)) {
+        return (
+          number.toLocaleString("en-IN") +
+          " Vacancies"
         );
       }
 
-      const jobs = Array.isArray(result.jobs)
-        ? result.jobs
-        : [];
+      return text + " Vacancies";
+    }
 
-      if (!jobs.length) {
-        listElement.innerHTML =
-          '<div class="empty-message">No upcoming deadlines found.</div>';
+    function createCard(job) {
+      const title =
+        String(job.targetName || "").trim();
 
-        return;
+      const lastDate =
+        String(job.lastDate || "").trim();
+
+      const notificationPdf =
+        getSafeURL(job.notificationPdf);
+
+      const applicationLink =
+        getSafeURL(job.applicationLink);
+
+      const vacancies =
+        formatVacancies(job.vacancies);
+
+      const dateParts =
+        getDateParts(lastDate);
+
+      if (!title || !dateParts) {
+        return "";
       }
 
-      const cards = jobs
-        .map(createCard)
-        .filter(Boolean)
-        .join("");
+      const titleHTML = notificationPdf
+        ? (
+          '<a class="job-title"' +
+          ' href="' +
+          escapeHTML(notificationPdf) +
+          '"' +
+          ' target="_blank"' +
+          ' rel="noopener noreferrer">' +
+          escapeHTML(title) +
+          "</a>"
+        )
+        : (
+          '<div class="job-title">' +
+          escapeHTML(title) +
+          "</div>"
+        );
 
-      listElement.innerHTML =
-        cards ||
-        '<div class="empty-message">No valid deadlines found.</div>';
+      const vacancyHTML = vacancies
+        ? (
+          '<div class="job-vacancy">' +
+          "👥 " +
+          escapeHTML(vacancies) +
+          "</div>"
+        )
+        : "";
 
-    } catch (error) {
-      console.error("Widget error:", error);
+      const statusText =
+        getStatus(lastDate);
 
-      listElement.innerHTML =
-        '<div class="error-message">' +
-        "Unable to load: " +
-        escapeHTML(error.message) +
-        "</div>";
+      const statusHTML = applicationLink
+        ? (
+          '<a class="apply-link"' +
+          ' href="' +
+          escapeHTML(applicationLink) +
+          '"' +
+          ' target="_blank"' +
+          ' rel="noopener noreferrer">' +
+          escapeHTML(statusText) +
+          "</a>"
+        )
+        : (
+          '<div class="job-status">' +
+          escapeHTML(statusText) +
+          "</div>"
+        );
+
+      return (
+        '<div class="job-card">' +
+
+          '<div class="date-box">' +
+
+            '<div class="date-day">' +
+            escapeHTML(dateParts.day) +
+            "</div>" +
+
+            '<div class="date-month">' +
+            escapeHTML(dateParts.month) +
+            "</div>" +
+
+          "</div>" +
+
+          '<div class="job-content">' +
+
+            titleHTML +
+            vacancyHTML +
+            statusHTML +
+
+          "</div>" +
+
+        "</div>"
+      );
     }
-  }
 
-  loadJobs();
-</script>
+    async function loadJobs() {
+      try {
+        const requestURL =
+          API_URL +
+          "?limit=" +
+          encodeURIComponent(LIMIT) +
+          "&cache=" +
+          Date.now();
+
+        const response = await fetch(requestURL);
+
+        if (!response.ok) {
+          throw new Error(
+            "HTTP error " + response.status
+          );
+        }
+
+        const result = await response.json();
+
+        if (result.status !== "success") {
+          throw new Error(
+            result.message ||
+            "API returned an error"
+          );
+        }
+
+        const jobs =
+          Array.isArray(result.jobs)
+            ? result.jobs
+            : [];
+
+        if (!jobs.length) {
+          listElement.innerHTML =
+            '<div class="empty-message">' +
+            "No upcoming deadlines found." +
+            "</div>";
+
+          return;
+        }
+
+        const cards = jobs
+          .map(createCard)
+          .filter(Boolean)
+          .join("");
+
+        listElement.innerHTML =
+          cards ||
+          '<div class="empty-message">' +
+          "No valid deadlines found." +
+          "</div>";
+
+      } catch (error) {
+        console.error(error);
+
+        listElement.innerHTML =
+          '<div class="error-message">' +
+          "Unable to load deadlines: " +
+          escapeHTML(error.message) +
+          "</div>";
+      }
+    }
+
+    loadJobs();
+  </script>
+
+</body>
+</html>
